@@ -1,0 +1,91 @@
+basePath: /api/v1
+definitions:
+  model.ErrorResponse:
+    properties:
+      message:
+        example: 해당 Paste를 찾을 수 없습니다.
+        type: string
+    type: object
+  model.PasteRequest:
+    properties:
+      content:
+        example: text
+        type: string
+      expire:
+        enum:
+        - 6h
+        - 12h
+        - 1d
+        - 7d
+        - forever
+        example: 6h
+        type: string
+    type: object
+  model.PasteResponse:
+    properties:
+      created_at:
+        type: string
+      expires_at:
+        type: string
+      id:
+        example: abc123
+        type: string
+    type: object
+info:
+  contact: {}
+  description: JsonJunk
+  title: JsonJunk API
+  version: "1.0"
+paths:
+  /paste:
+    post:
+      consumes:
+      - application/json
+      description: 새로운 Paste 텍스트를 생성하고 저장합니다.
+      parameters:
+      - description: Paste Content
+        in: body
+        name: paste
+        required: true
+        schema:
+          $ref: '#/definitions/model.PasteRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.PasteResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      summary: Paste 생성
+      tags:
+      - pastes
+  /paste/{id}:
+    get:
+      consumes:
+      - application/json
+      description: ID를 통해 저장된 Paste 내용을 조회합니다.
+      parameters:
+      - description: Paste ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.PasteResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      summary: Paste 조회
+      tags:
+      - pastes
+swagger: "2.0"

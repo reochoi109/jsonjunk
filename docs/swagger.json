@@ -1,0 +1,136 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "JsonJunk",
+        "title": "JsonJunk API",
+        "contact": {},
+        "version": "1.0"
+    },
+    "basePath": "/api/v1",
+    "paths": {
+        "/paste": {
+            "post": {
+                "description": "새로운 Paste 텍스트를 생성하고 저장합니다.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "pastes"
+                ],
+                "summary": "Paste 생성",
+                "parameters": [
+                    {
+                        "description": "Paste Content",
+                        "name": "paste",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.PasteRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.PasteResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/paste/{id}": {
+            "get": {
+                "description": "ID를 통해 저장된 Paste 내용을 조회합니다.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "pastes"
+                ],
+                "summary": "Paste 조회",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Paste ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.PasteResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/model.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "model.ErrorResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string",
+                    "example": "해당 Paste를 찾을 수 없습니다."
+                }
+            }
+        },
+        "model.PasteRequest": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "type": "string",
+                    "example": "text"
+                },
+                "expire": {
+                    "type": "string",
+                    "enum": [
+                        "6h",
+                        "12h",
+                        "1d",
+                        "7d",
+                        "forever"
+                    ],
+                    "example": "6h"
+                }
+            }
+        },
+        "model.PasteResponse": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "expires_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "abc123"
+                }
+            }
+        }
+    }
+}
