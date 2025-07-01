@@ -17,7 +17,7 @@ const docTemplate = `{
     "paths": {
         "/paste": {
             "post": {
-                "description": "새로운 Paste 텍스트를 생성하고 저장합니다.",
+                "description": "새로운 Paste 텍스트를 생성하고 저장합니다.\nexpire",
                 "consumes": [
                     "application/json"
                 ],
@@ -48,6 +48,35 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/paste/type": {
+            "get": {
+                "description": "Paste expire type 조회합니다.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "pastes"
+                ],
+                "summary": "Paste expire type 조회",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.PasteResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
                         "schema": {
                             "$ref": "#/definitions/model.ErrorResponse"
                         }
@@ -104,23 +133,33 @@ const docTemplate = `{
                 }
             }
         },
+        "model.ExpireOption": {
+            "type": "integer",
+            "enum": [
+                1,
+                2,
+                3,
+                4
+            ],
+            "x-enum-varnames": [
+                "Expire6Hours",
+                "Expire12Hours",
+                "Expire1Day",
+                "Expire7Days"
+            ]
+        },
         "model.PasteRequest": {
             "type": "object",
+            "required": [
+                "content",
+                "expire"
+            ],
             "properties": {
                 "content": {
-                    "type": "string",
-                    "example": "text"
+                    "type": "string"
                 },
                 "expire": {
-                    "type": "string",
-                    "enum": [
-                        "6h",
-                        "12h",
-                        "1d",
-                        "7d",
-                        "forever"
-                    ],
-                    "example": "6h"
+                    "$ref": "#/definitions/model.ExpireOption"
                 }
             }
         },

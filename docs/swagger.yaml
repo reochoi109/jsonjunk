@@ -6,20 +6,27 @@ definitions:
         example: 해당 Paste를 찾을 수 없습니다.
         type: string
     type: object
+  model.ExpireOption:
+    enum:
+    - 1
+    - 2
+    - 3
+    - 4
+    type: integer
+    x-enum-varnames:
+    - Expire6Hours
+    - Expire12Hours
+    - Expire1Day
+    - Expire7Days
   model.PasteRequest:
     properties:
       content:
-        example: text
         type: string
       expire:
-        enum:
-        - 6h
-        - 12h
-        - 1d
-        - 7d
-        - forever
-        example: 6h
-        type: string
+        $ref: '#/definitions/model.ExpireOption'
+    required:
+    - content
+    - expire
     type: object
   model.PasteResponse:
     properties:
@@ -41,7 +48,9 @@ paths:
     post:
       consumes:
       - application/json
-      description: 새로운 Paste 텍스트를 생성하고 저장합니다.
+      description: |-
+        새로운 Paste 텍스트를 생성하고 저장합니다.
+        expire
       parameters:
       - description: Paste Content
         in: body
@@ -86,6 +95,25 @@ paths:
           schema:
             $ref: '#/definitions/model.ErrorResponse'
       summary: Paste 조회
+      tags:
+      - pastes
+  /paste/type:
+    get:
+      consumes:
+      - application/json
+      description: Paste expire type 조회합니다.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.PasteResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/model.ErrorResponse'
+      summary: Paste expire type 조회
       tags:
       - pastes
 swagger: "2.0"

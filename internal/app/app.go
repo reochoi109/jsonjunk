@@ -1,7 +1,15 @@
 package app
 
-import "jsonjunk/internal/router"
+import (
+	"jsonjunk/config"
+	"jsonjunk/internal/repository"
+	"jsonjunk/internal/router"
+	"jsonjunk/internal/service"
+)
 
 func Run() {
-	router.Run()
+	config.InitMongo()
+	repo := repository.NewMongoPasteRepository()
+	svc := service.NewPasteService(repo)
+	router.Run(svc)
 }
