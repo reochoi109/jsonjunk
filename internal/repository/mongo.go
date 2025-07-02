@@ -64,3 +64,25 @@ func (r *mongoRepository) SearchPasteByID(id string) (*model.Paste, error) {
 	}
 	return &result, nil
 }
+
+func (r *mongoRepository) TestSearchPastedAll() ([]*model.Paste, error) {
+	cursor, err := r.coll.Find(context.TODO(), bson.M{})
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(context.TODO())
+
+	var results []*model.Paste
+	for cursor.Next(context.TODO()) {
+		var paste model.Paste
+		if err := cursor.Decode(&paste); err != nil {
+			return nil, err
+		}
+		results = append(results, &paste)
+	}
+
+	if err := cursor.Err(); err != nil {
+		return nil, err
+	}
+	return results, nil
+}

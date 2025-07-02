@@ -43,13 +43,42 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/model.PasteResponse"
+                            "$ref": "#/definitions/model.ResponseFormat"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/model.ErrorResponse"
+                            "$ref": "#/definitions/model.ResponseFormat"
+                        }
+                    }
+                }
+            }
+        },
+        "/paste/test/list": {
+            "get": {
+                "description": "test",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "test"
+                ],
+                "summary": "test",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.ResponseFormat"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.ResponseFormat"
                         }
                     }
                 }
@@ -72,13 +101,28 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/model.PasteResponse"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/model.ResponseFormat"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/model.ExpiredTypeResponse"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/model.ErrorResponse"
+                            "$ref": "#/definitions/model.ResponseFormat"
                         }
                     }
                 }
@@ -116,7 +160,7 @@ const docTemplate = `{
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/model.ErrorResponse"
+                            "$ref": "#/definitions/model.PastErrorResponse"
                         }
                     }
                 }
@@ -124,15 +168,6 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "model.ErrorResponse": {
-            "type": "object",
-            "properties": {
-                "message": {
-                    "type": "string",
-                    "example": "해당 Paste를 찾을 수 없습니다."
-                }
-            }
-        },
         "model.ExpireOption": {
             "type": "integer",
             "enum": [
@@ -147,6 +182,25 @@ const docTemplate = `{
                 "Expire1Day",
                 "Expire7Days"
             ]
+        },
+        "model.ExpiredTypeResponse": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "integer"
+                }
+            }
+        },
+        "model.PastErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                }
+            }
         },
         "model.PasteRequest": {
             "type": "object",
@@ -166,6 +220,9 @@ const docTemplate = `{
         "model.PasteResponse": {
             "type": "object",
             "properties": {
+                "content": {
+                    "type": "string"
+                },
                 "created_at": {
                     "type": "string"
                 },
@@ -175,6 +232,18 @@ const docTemplate = `{
                 "id": {
                     "type": "string",
                     "example": "abc123"
+                }
+            }
+        },
+        "model.ResponseFormat": {
+            "type": "object",
+            "properties": {
+                "data": {},
+                "error_message": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
                 }
             }
         }

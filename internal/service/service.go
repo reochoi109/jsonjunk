@@ -8,6 +8,7 @@ import (
 type PasteService interface {
 	CreatePaste(p model.Paste) error
 	GetPaste(id string) (*model.Paste, error)
+	TestSearch() ([]*model.Paste, error)
 }
 
 type pasteService struct {
@@ -24,4 +25,8 @@ func (s *pasteService) CreatePaste(p model.Paste) error {
 
 func (s *pasteService) GetPaste(id string) (*model.Paste, error) {
 	return s.repo.SearchPasteByID(id)
+}
+
+func (s *pasteService) TestSearch() ([]*model.Paste, error) {
+	return s.repo.TestSearchPastedAll()
 }

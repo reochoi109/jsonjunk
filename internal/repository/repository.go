@@ -5,4 +5,5 @@ import "jsonjunk/internal/model"
 type Repository interface {
 	Insert(p model.Paste) error
 	SearchPasteByID(id string) (*model.Paste, error)
+	TestSearchPastedAll() ([]*model.Paste, error)
 }

@@ -17,8 +17,8 @@ import (
 //	@Tags			pastes
 //	@Accept			json
 //	@Produce		json
-//	@Success		200	{object}	model.HandleResponse{data=[]model.ExpiredTypeResponse}
-//	@Failure		404	{object}	model.HandleResponse
+//	@Success		200	{object}	model.ResponseFormat{data=[]model.ExpiredTypeResponse}
+//	@Failure		404	{object}	model.ResponseFormat
 //	@Router			/paste/type [get]
 func GetExpireType(c *gin.Context) {
 	types := []model.ExpiredTypeResponse{
@@ -74,8 +74,8 @@ func GetPasteHandler(svc service.PasteService) gin.HandlerFunc {
 //	@Accept			json
 //	@Produce		json
 //	@Param			paste	body		model.PasteRequest	true	"Paste Content"
-//	@Success		200		{object}	model.HandleResponse
-//	@Failure		400		{object}	model.HandleResponse
+//	@Success		200		{object}	model.ResponseFormat
+//	@Failure		400		{object}	model.ResponseFormat
 //	@Router			/paste [post]
 func CreatePasteHandler(svc service.PasteService) gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -95,5 +95,22 @@ func CreatePasteHandler(svc service.PasteService) gin.HandlerFunc {
 			return
 		}
 		c.JSON(http.StatusOK, gin.H{"message": "Created"})
+	}
+}
+
+// CreatePaste godoc
+//
+//	@Summary		test
+//	@Description	test
+//	@Tags			test
+//	@Accept			json
+//	@Produce		json
+//	@Success		200		{object}	model.ResponseFormat
+//	@Failure		400		{object}	model.ResponseFormat
+//	@Router			/paste/test/list [get]
+func TestSearchPastedAll(svc service.PasteService) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		data, _ := svc.TestSearch()
+		c.JSON(http.StatusOK, data)
 	}
 }

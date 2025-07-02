@@ -1,11 +1,5 @@
 basePath: /api/v1
 definitions:
-  model.ErrorResponse:
-    properties:
-      message:
-        example: 해당 Paste를 찾을 수 없습니다.
-        type: string
-    type: object
   model.ExpireOption:
     enum:
     - 1
@@ -18,6 +12,18 @@ definitions:
     - Expire12Hours
     - Expire1Day
     - Expire7Days
+  model.ExpiredTypeResponse:
+    properties:
+      name:
+        type: string
+      type:
+        type: integer
+    type: object
+  model.PastErrorResponse:
+    properties:
+      error:
+        type: string
+    type: object
   model.PasteRequest:
     properties:
       content:
@@ -30,12 +36,22 @@ definitions:
     type: object
   model.PasteResponse:
     properties:
+      content:
+        type: string
       created_at:
         type: string
       expires_at:
         type: string
       id:
         example: abc123
+        type: string
+    type: object
+  model.ResponseFormat:
+    properties:
+      data: {}
+      error_message:
+        type: string
+      message:
         type: string
     type: object
 info:
@@ -64,11 +80,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/model.PasteResponse'
+            $ref: '#/definitions/model.ResponseFormat'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/model.ErrorResponse'
+            $ref: '#/definitions/model.ResponseFormat'
       summary: Paste 생성
       tags:
       - pastes
@@ -93,10 +109,29 @@ paths:
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/model.ErrorResponse'
+            $ref: '#/definitions/model.PastErrorResponse'
       summary: Paste 조회
       tags:
       - pastes
+  /paste/test/list:
+    get:
+      consumes:
+      - application/json
+      description: test
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.ResponseFormat'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.ResponseFormat'
+      summary: test
+      tags:
+      - test
   /paste/type:
     get:
       consumes:
@@ -108,11 +143,18 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/model.PasteResponse'
+            allOf:
+            - $ref: '#/definitions/model.ResponseFormat'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/model.ExpiredTypeResponse'
+                  type: array
+              type: object
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/model.ErrorResponse'
+            $ref: '#/definitions/model.ResponseFormat'
       summary: Paste expire type 조회
       tags:
       - pastes
