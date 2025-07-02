@@ -55,9 +55,9 @@ const docTemplate = `{
                 }
             }
         },
-        "/paste/test/list": {
+        "/paste/list": {
             "get": {
-                "description": "test",
+                "description": "Paste 목록 조회 요청",
                 "consumes": [
                     "application/json"
                 ],
@@ -65,14 +65,29 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "test"
+                    "pastes"
                 ],
-                "summary": "test",
+                "summary": "Paste 목록 조회",
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/model.ResponseFormat"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/model.ResponseFormat"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/definitions/model.PasteResponse"
+                                            }
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "400": {
@@ -94,7 +109,7 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "pastes"
+                    "pastes:type"
                 ],
                 "summary": "Paste expire type 조회",
                 "responses": {
@@ -154,13 +169,25 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/model.PasteResponse"
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/model.ResponseFormat"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/model.PasteResponse"
+                                        }
+                                    }
+                                }
+                            ]
                         }
                     },
                     "404": {
                         "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/model.PastErrorResponse"
+                            "$ref": "#/definitions/model.ResponseFormat"
                         }
                     }
                 }
@@ -194,31 +221,40 @@ const docTemplate = `{
                 }
             }
         },
-        "model.PastErrorResponse": {
-            "type": "object",
-            "properties": {
-                "error": {
-                    "type": "string"
-                }
-            }
-        },
         "model.PasteRequest": {
             "type": "object",
             "required": [
                 "content",
-                "expire"
+                "expire",
+                "title"
             ],
             "properties": {
                 "content": {
                     "type": "string"
                 },
                 "expire": {
-                    "$ref": "#/definitions/model.ExpireOption"
+                    "enum": [
+                        1,
+                        2,
+                        3,
+                        4
+                    ],
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/model.ExpireOption"
+                        }
+                    ]
+                },
+                "title": {
+                    "type": "string"
                 }
             }
         },
         "model.PasteResponse": {
             "type": "object",
+            "required": [
+                "title"
+            ],
             "properties": {
                 "content": {
                     "type": "string"
@@ -232,6 +268,9 @@ const docTemplate = `{
                 "id": {
                     "type": "string",
                     "example": "abc123"
+                },
+                "title": {
+                    "type": "string"
                 }
             }
         },

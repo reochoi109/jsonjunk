@@ -23,7 +23,7 @@ func Run(svc service.PasteService) {
 
 func RegisterPastes(api *gin.RouterGroup, svc service.PasteService) {
 	paste := api.Group("/paste")
-	paste.GET("/test/list", handler.TestSearchPastedAll(svc))
+	paste.GET("/list", handler.GetSearchPastedList(svc))
 	paste.GET("/type", handler.GetExpireType)
 	paste.GET("/:id", handler.GetPasteHandler(svc))
 	paste.POST("", handler.CreatePasteHandler(svc))

@@ -19,20 +19,24 @@ definitions:
       type:
         type: integer
     type: object
-  model.PastErrorResponse:
-    properties:
-      error:
-        type: string
-    type: object
   model.PasteRequest:
     properties:
       content:
         type: string
       expire:
-        $ref: '#/definitions/model.ExpireOption'
+        allOf:
+        - $ref: '#/definitions/model.ExpireOption'
+        enum:
+        - 1
+        - 2
+        - 3
+        - 4
+      title:
+        type: string
     required:
     - content
     - expire
+    - title
     type: object
   model.PasteResponse:
     properties:
@@ -45,6 +49,10 @@ definitions:
       id:
         example: abc123
         type: string
+      title:
+        type: string
+    required:
+    - title
     type: object
   model.ResponseFormat:
     properties:
@@ -105,33 +113,45 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/model.PasteResponse'
+            allOf:
+            - $ref: '#/definitions/model.ResponseFormat'
+            - properties:
+                data:
+                  $ref: '#/definitions/model.PasteResponse'
+              type: object
         "404":
           description: Not Found
           schema:
-            $ref: '#/definitions/model.PastErrorResponse'
+            $ref: '#/definitions/model.ResponseFormat'
       summary: Paste 조회
       tags:
       - pastes
-  /paste/test/list:
+  /paste/list:
     get:
       consumes:
       - application/json
-      description: test
+      description: Paste 목록 조회 요청
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/model.ResponseFormat'
+            allOf:
+            - $ref: '#/definitions/model.ResponseFormat'
+            - properties:
+                data:
+                  items:
+                    $ref: '#/definitions/model.PasteResponse'
+                  type: array
+              type: object
         "400":
           description: Bad Request
           schema:
             $ref: '#/definitions/model.ResponseFormat'
-      summary: test
+      summary: Paste 목록 조회
       tags:
-      - test
+      - pastes
   /paste/type:
     get:
       consumes:
@@ -157,5 +177,5 @@ paths:
             $ref: '#/definitions/model.ResponseFormat'
       summary: Paste expire type 조회
       tags:
-      - pastes
+      - pastes:type
 swagger: "2.0"

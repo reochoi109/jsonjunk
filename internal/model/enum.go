@@ -25,3 +25,27 @@ func (e ExpireOption) Duration() time.Duration {
 		return 0
 	}
 }
+
+func (e ExpireOption) IsValid() bool {
+	switch e {
+	case Expire6Hours, Expire12Hours, Expire1Day, Expire7Days:
+		return true
+	default:
+		return false
+	}
+}
+
+func (e ExpireOption) String() string {
+	switch e {
+	case Expire6Hours:
+		return "6 hours"
+	case Expire12Hours:
+		return "12 hours"
+	case Expire1Day:
+		return "1 day"
+	case Expire7Days:
+		return "7 days"
+	default:
+		return "invalid"
+	}
+}

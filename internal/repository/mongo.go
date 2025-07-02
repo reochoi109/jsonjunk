@@ -65,7 +65,7 @@ func (r *mongoRepository) SearchPasteByID(id string) (*model.Paste, error) {
 	return &result, nil
 }
 
-func (r *mongoRepository) TestSearchPastedAll() ([]*model.Paste, error) {
+func (r *mongoRepository) SearchPasteList() ([]*model.Paste, error) {
 	cursor, err := r.coll.Find(context.TODO(), bson.M{})
 	if err != nil {
 		return nil, err
