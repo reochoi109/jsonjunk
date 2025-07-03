@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"jsonjunk/internal/model"
 	"jsonjunk/internal/service"
@@ -57,7 +58,16 @@ func GetExpireType(c *gin.Context) {
 func GetSearchPastedList(svc service.PasteService) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx := context.WithValue(c.Request.Context(), model.ContextRequestID, idgen.GenerateUUID())
-		datas, _ := svc.SearchPasteList(ctx)
+		datas, err := svc.GetListPastes(ctx)
+		if err != nil {
+			if errors.Is(err, model.ErrDatabase) {
+				model.HandleResponse(c, http.StatusInternalServerError, model.ErrorDatabase, nil)
+				return
+			}
+			model.HandleResponse(c, http.StatusInternalServerError, model.ErrorInternalServer, nil)
+			return
+		}
+
 		response := make([]model.PasteResponse, len(datas))
 		for i, v := range datas {
 			response[i] = model.PasteResponse{
@@ -87,7 +97,7 @@ func GetPasteHandler(svc service.PasteService) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx := context.WithValue(c.Request.Context(), model.ContextRequestID, idgen.GenerateUUID())
 		id := c.Param("id")
-		paste, err := svc.SearchPaste(ctx, id)
+		paste, err := svc.GetPasteByID(ctx, id)
 		if err != nil || paste == nil {
 			model.HandleResponse(c, http.StatusNotFound, model.ErrorPasteNotFound, nil)
 			return
@@ -125,18 +135,24 @@ func CreatePasteHandler(svc service.PasteService) gin.HandlerFunc {
 			return
 		}
 
-		if err := svc.CreatePaste(ctx, model.Paste{
+		err := svc.RegisterPaste(ctx, model.Paste{
 			ID:        idgen.GenerateUUID(),
 			Title:     req.Title,
 			Language:  req.Language,
 			Content:   req.Content,
 			CreatedAt: time.Now().UTC(),
 			ExpiresAt: time.Now().UTC().Add(req.Expire.Duration()),
-		}); err != nil {
-			model.HandleResponse(c, http.StatusBadRequest, model.ErrorPasteCreateFailed, nil)
-			return
+		})
+		switch {
+		case errors.Is(err, model.ErrDuplicatePasteID):
+			model.HandleResponse(c, http.StatusInternalServerError, model.ErrorDatabase, nil)
+		case errors.Is(err, model.ErrInsertFailed):
+			model.HandleResponse(c, http.StatusInternalServerError, model.ErrorDatabase, nil)
+		case err != nil:
+			model.HandleResponse(c, http.StatusInternalServerError, model.ErrorInternalServer, nil)
+		default:
+			model.HandleResponse(c, http.StatusCreated, model.SuccessPasteCreated, nil)
 		}
-		model.HandleResponse(c, http.StatusCreated, model.Success, nil)
 	}
 }
 
@@ -190,12 +206,17 @@ func UpdatePasteHandler(svc service.PasteService) gin.HandlerFunc {
 			return
 		}
 
-		updated, err := svc.ModifyPaste(ctx, id, fields)
-		if err != nil {
+		updated, err := svc.UpdatePasteByID(ctx, id, fields)
+		switch {
+		case errors.Is(err, model.ErrPasteNotFound):
+			model.HandleResponse(c, http.StatusNotFound, model.ErrorPasteNotFound, nil)
+		case errors.Is(err, model.ErrDatabase):
+			model.HandleResponse(c, http.StatusInternalServerError, model.ErrorDatabase, nil)
+		case err != nil:
 			model.HandleResponse(c, http.StatusInternalServerError, model.ErrorInternalServer, nil)
-			return
+		default:
+			model.HandleResponse(c, http.StatusOK, model.SuccessPasteUpdated, updated)
 		}
-		model.HandleResponse(c, http.StatusOK, model.SuccessPasteUpdated, updated)
 	}
 }
 
@@ -209,15 +230,19 @@ func UpdatePasteHandler(svc service.PasteService) gin.HandlerFunc {
 //	@Param			id		path		string	true	"Paste ID"
 //	@Success		200		{object}	model.ResponseFormat
 //	@Failure		400		{object}	model.ResponseFormat
-//	@Router			/paste/{id} [put]
+//	@Router			/paste/{id} [delete]
 func RemovePasteHandler(svc service.PasteService) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx := context.WithValue(c.Request.Context(), model.ContextRequestID, idgen.GenerateUUID())
 		id := c.Param("id")
-		if err := svc.DeletePaste(ctx, id); err != nil {
+		err := svc.RemovePasteByID(ctx, id)
+		switch {
+		case errors.Is(err, model.ErrPasteNotFound):
+			model.HandleResponse(c, http.StatusNotFound, model.ErrorPasteNotFound, nil)
+		case err != nil:
 			model.HandleResponse(c, http.StatusInternalServerError, model.ErrorDatabase, nil)
-			return
+		default:
+			model.HandleResponse(c, http.StatusNoContent, model.Success, nil)
 		}
-		model.HandleResponse(c, http.StatusNoContent, model.Success, nil)
 	}
 }

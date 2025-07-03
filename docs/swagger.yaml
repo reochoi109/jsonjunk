@@ -112,6 +112,30 @@ paths:
       tags:
       - pastes
   /paste/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Paste 텍스트를 삭제합니다.
+      parameters:
+      - description: Paste ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.ResponseFormat'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.ResponseFormat'
+      summary: Paste 삭제
+      tags:
+      - pastes:test
     get:
       consumes:
       - application/json
@@ -144,13 +168,19 @@ paths:
     put:
       consumes:
       - application/json
-      description: Paste 텍스트를 삭제합니다.
+      description: Paste 텍스트를 업데이트 및 저장합니다.
       parameters:
       - description: Paste ID
         in: path
         name: id
         required: true
         type: string
+      - description: Paste update Content
+        in: body
+        name: paste
+        required: true
+        schema:
+          $ref: '#/definitions/model.PasteUpdateRequest'
       produces:
       - application/json
       responses:
@@ -162,7 +192,7 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/model.ResponseFormat'
-      summary: Paste 삭제
+      summary: Paste 업데이트
       tags:
       - pastes:test
   /paste/list:

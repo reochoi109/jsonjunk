@@ -186,6 +186,51 @@
                 }
             },
             "put": {
+                "description": "Paste 텍스트를 업데이트 및 저장합니다.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "pastes:test"
+                ],
+                "summary": "Paste 업데이트",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Paste ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Paste update Content",
+                        "name": "paste",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.PasteUpdateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.ResponseFormat"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.ResponseFormat"
+                        }
+                    }
+                }
+            },
+            "delete": {
                 "description": "Paste 텍스트를 삭제합니다.",
                 "consumes": [
                     "application/json"

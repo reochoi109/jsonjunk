@@ -36,7 +36,7 @@ func NewMongoPasteRepository(dbName string) Repository {
 	return &mongoRepository{coll: coll}
 }
 
-func (r *mongoRepository) Insert(ctx context.Context, p model.Paste) error {
+func (r *mongoRepository) InsertPaste(ctx context.Context, p model.Paste) error {
 	for i := 0; i < 3; i++ {
 
 		_, err := r.coll.InsertOne(ctx, p)
@@ -58,9 +58,9 @@ func (r *mongoRepository) Insert(ctx context.Context, p model.Paste) error {
 				continue
 			}
 		}
-		return fmt.Errorf("failed to insert paste: %w", err)
+		return fmt.Errorf("%w: %v", model.ErrInsertFailed, err)
 	}
-	return fmt.Errorf("failed to generate unique uuid after 3 attempts")
+	return fmt.Errorf("%w: failed to generate unique ID after 3 attempts", model.ErrDuplicatePasteID)
 }
 
 func (r *mongoRepository) SearchPasteByID(ctx context.Context, id string) (*model.Paste, error) {
@@ -70,7 +70,7 @@ func (r *mongoRepository) SearchPasteByID(ctx context.Context, id string) (*mode
 		if errors.Is(err, mongo.ErrNoDocuments) {
 			return nil, nil
 		}
-		return nil, fmt.Errorf("failed to find paste: %w", err)
+		return nil, fmt.Errorf("%w: %v", model.ErrDatabase, err)
 	}
 	return &result, nil
 }
@@ -78,7 +78,7 @@ func (r *mongoRepository) SearchPasteByID(ctx context.Context, id string) (*mode
 func (r *mongoRepository) SearchPasteList(ctx context.Context) ([]*model.Paste, error) {
 	cursor, err := r.coll.Find(ctx, bson.M{})
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%w: %v", model.ErrDatabase, err)
 	}
 	defer cursor.Close(ctx)
 
@@ -86,19 +86,19 @@ func (r *mongoRepository) SearchPasteList(ctx context.Context) ([]*model.Paste, 
 	for cursor.Next(ctx) {
 		var paste model.Paste
 		if err := cursor.Decode(&paste); err != nil {
-			return nil, err
+			return nil, fmt.Errorf("%w: %v", model.ErrDatabase, err)
 		}
 		results = append(results, &paste)
 	}
 
 	if err := cursor.Err(); err != nil {
-		return nil, fmt.Errorf("failed to found pastes ,%w", err)
+		return nil, fmt.Errorf("%w: %v", model.ErrDatabase, err)
 	}
 
 	return results, nil
 }
 
-func (r *mongoRepository) ModifyPaste(ctx context.Context, id string, fields map[string]interface{}) (paste model.Paste, err error) {
+func (r *mongoRepository) UpdatePasteByID(ctx context.Context, id string, fields map[string]interface{}) (paste model.Paste, err error) {
 	filter := bson.M{"id": id}
 	update := bson.M{"$set": fields}
 
@@ -107,14 +107,14 @@ func (r *mongoRepository) ModifyPaste(ctx context.Context, id string, fields map
 	err = r.coll.FindOneAndUpdate(ctx, filter, update, opts).Decode(&paste)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {
-			return paste, fmt.Errorf("no paste found with id: %s", id)
+			return paste, model.ErrPasteNotFound
 		}
-		return paste, fmt.Errorf("failed to update paste: %w", err)
+		return paste, fmt.Errorf("%w: %v", model.ErrDatabase, err)
 	}
 	return paste, nil
 }
 
-func (r *mongoRepository) DeletePaste(ctx context.Context, id string) error {
+func (r *mongoRepository) DeletePasteByID(ctx context.Context, id string) error {
 	filter := bson.M{"id": id}
 	result, err := r.coll.DeleteOne(ctx, filter)
 	if err != nil {
@@ -122,7 +122,7 @@ func (r *mongoRepository) DeletePaste(ctx context.Context, id string) error {
 	}
 
 	if result.DeletedCount == 0 {
-		return fmt.Errorf("no paste found with id: %s", id)
+		return model.ErrPasteNotFound
 	}
 	return nil
 }
