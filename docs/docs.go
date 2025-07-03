@@ -15,7 +15,7 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/paste": {
+        "/api/v1/paste": {
             "post": {
                 "description": "새로운 Paste 텍스트를 생성하고 저장합니다.",
                 "consumes": [
@@ -55,7 +55,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/paste/list": {
+        "/api/v1/paste/list": {
             "get": {
                 "description": "Paste 목록 조회 요청",
                 "consumes": [
@@ -99,7 +99,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/paste/type": {
+        "/api/v1/paste/type": {
             "get": {
                 "description": "Paste expire type 조회합니다.",
                 "consumes": [
@@ -143,7 +143,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/paste/{id}": {
+        "/api/v1/paste/{id}": {
             "get": {
                 "description": "ID를 통해 저장된 Paste 내용을 조회합니다.",
                 "consumes": [
@@ -273,6 +273,31 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/raw/{id}": {
+            "get": {
+                "description": "데이터를 조회한다.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "api"
+                ],
+                "summary": "데이터를 조회한다.",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Paste ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {}
+            }
         }
     },
     "definitions": {
@@ -399,7 +424,7 @@ const docTemplate = `{
 var SwaggerInfo = &swag.Spec{
 	Version:          "1.0",
 	Host:             "",
-	BasePath:         "/api/v1",
+	BasePath:         "",
 	Schemes:          []string{},
 	Title:            "JsonJunk API",
 	Description:      "JsonJunk",

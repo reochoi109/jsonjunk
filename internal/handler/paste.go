@@ -22,7 +22,7 @@ import (
 //	@Produce		json
 //	@Success		200	{object}	model.ResponseFormat{data=[]model.ExpiredTypeResponse}
 //	@Failure		404	{object}	model.ResponseFormat
-//	@Router			/paste/type [get]
+//	@Router			/api/v1/paste/type [get]
 func GetExpireType(c *gin.Context) {
 	types := []model.ExpiredTypeResponse{
 		{
@@ -54,7 +54,7 @@ func GetExpireType(c *gin.Context) {
 //	@Produce		json
 //	@Success		200		{object}	model.ResponseFormat{data=[]model.PasteResponse}
 //	@Failure		400		{object}	model.ResponseFormat
-//	@Router			/paste/list [get]
+//	@Router			/api/v1/paste/list [get]
 func GetSearchPastedList(svc service.PasteService) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx := context.WithValue(c.Request.Context(), model.ContextRequestID, idgen.GenerateUUID())
@@ -92,7 +92,7 @@ func GetSearchPastedList(svc service.PasteService) gin.HandlerFunc {
 //	@Param			id	path		string	true	"Paste ID"
 //	@Success		200	{object}	model.ResponseFormat{data=model.PasteResponse}
 //	@Failure		404	{object}	model.ResponseFormat
-//	@Router			/paste/{id} [get]
+//	@Router			/api/v1/paste/{id} [get]
 func GetPasteHandler(svc service.PasteService) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx := context.WithValue(c.Request.Context(), model.ContextRequestID, idgen.GenerateUUID())
@@ -124,7 +124,7 @@ func GetPasteHandler(svc service.PasteService) gin.HandlerFunc {
 //	@Param			paste	body		model.PasteRequest	true	"Paste Content"
 //	@Success		200		{object}	model.ResponseFormat
 //	@Failure		400		{object}	model.ResponseFormat
-//	@Router			/paste [post]
+//	@Router			/api/v1/paste [post]
 func CreatePasteHandler(svc service.PasteService) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx := context.WithValue(c.Request.Context(), model.ContextRequestID, idgen.GenerateUUID())
@@ -167,7 +167,7 @@ func CreatePasteHandler(svc service.PasteService) gin.HandlerFunc {
 //	@Param			paste	body		model.PasteUpdateRequest	true	"Paste update Content"
 //	@Success		200		{object}	model.ResponseFormat
 //	@Failure		400		{object}	model.ResponseFormat
-//	@Router			/paste/{id} [put]
+//	@Router			/api/v1/paste/{id} [put]
 func UpdatePasteHandler(svc service.PasteService) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx := context.WithValue(c.Request.Context(), model.ContextRequestID, idgen.GenerateUUID())
@@ -230,7 +230,7 @@ func UpdatePasteHandler(svc service.PasteService) gin.HandlerFunc {
 //	@Param			id		path		string	true	"Paste ID"
 //	@Success		200		{object}	model.ResponseFormat
 //	@Failure		400		{object}	model.ResponseFormat
-//	@Router			/paste/{id} [delete]
+//	@Router			/api/v1/paste/{id} [delete]
 func RemovePasteHandler(svc service.PasteService) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx := context.WithValue(c.Request.Context(), model.ContextRequestID, idgen.GenerateUUID())

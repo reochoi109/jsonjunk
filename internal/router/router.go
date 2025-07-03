@@ -16,8 +16,12 @@ func Run(svc service.PasteService) {
 	// Swagger endpoint
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
-	api := r.Group("/api/v1")
-	RegisterPastes(api, svc)
+	api := r.Group("/raw")
+	RegisterAPI(api, svc)
+
+	group := r.Group("/api/v1")
+	RegisterPastes(group, svc)
+
 	r.Run(":8080")
 }
 
@@ -28,4 +32,8 @@ func RegisterPastes(api *gin.RouterGroup, svc service.PasteService) {
 	paste.GET("/:id", handler.GetPasteHandler(svc))
 	paste.PUT("/:id", handler.UpdatePasteHandler(svc))
 	paste.POST("", handler.CreatePasteHandler(svc))
+}
+
+func RegisterAPI(api *gin.RouterGroup, svc service.PasteService) {
+	api.GET("/:id", handler.GetPasteJsonHandler(svc))
 }
