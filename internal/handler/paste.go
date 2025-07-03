@@ -1,6 +1,8 @@
 package handler
 
 import (
+	"context"
+	"fmt"
 	"jsonjunk/internal/model"
 	"jsonjunk/internal/service"
 	"jsonjunk/pkg/idgen"
@@ -54,12 +56,14 @@ func GetExpireType(c *gin.Context) {
 //	@Router			/paste/list [get]
 func GetSearchPastedList(svc service.PasteService) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		datas, _ := svc.SearchPasteList()
+		ctx := context.WithValue(c.Request.Context(), model.ContextRequestID, idgen.GenerateUUID())
+		datas, _ := svc.SearchPasteList(ctx)
 		response := make([]model.PasteResponse, len(datas))
 		for i, v := range datas {
 			response[i] = model.PasteResponse{
 				ID:        v.ID,
 				Title:     v.Title,
+				Language:  v.Language,
 				CreatedAt: v.CreatedAt.Format("2006-01-02 15:04:05"),
 				ExpiresAt: v.ExpiresAt.Format("2006-01-02 15:04:05"),
 			}
@@ -81,8 +85,9 @@ func GetSearchPastedList(svc service.PasteService) gin.HandlerFunc {
 //	@Router			/paste/{id} [get]
 func GetPasteHandler(svc service.PasteService) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		ctx := context.WithValue(c.Request.Context(), model.ContextRequestID, idgen.GenerateUUID())
 		id := c.Param("id")
-		paste, err := svc.SearchPaste(id)
+		paste, err := svc.SearchPaste(ctx, id)
 		if err != nil || paste == nil {
 			model.HandleResponse(c, http.StatusNotFound, model.ErrorPasteNotFound, nil)
 			return
@@ -90,6 +95,7 @@ func GetPasteHandler(svc service.PasteService) gin.HandlerFunc {
 		response := model.PasteResponse{
 			ID:        paste.ID,
 			Title:     paste.Title,
+			Language:  paste.Language,
 			CreatedAt: paste.CreatedAt.Format("2006-01-02 15:04:05"),
 			ExpiresAt: paste.ExpiresAt.Format("2006-01-02 15:04:05"),
 			Content:   paste.Content,
@@ -102,7 +108,6 @@ func GetPasteHandler(svc service.PasteService) gin.HandlerFunc {
 //
 //	@Summary		Paste 생성
 //	@Description	새로운 Paste 텍스트를 생성하고 저장합니다.
-//	@Description	expire
 //	@Tags			pastes
 //	@Accept			json
 //	@Produce		json
@@ -112,15 +117,18 @@ func GetPasteHandler(svc service.PasteService) gin.HandlerFunc {
 //	@Router			/paste [post]
 func CreatePasteHandler(svc service.PasteService) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		ctx := context.WithValue(c.Request.Context(), model.ContextRequestID, idgen.GenerateUUID())
+
 		var req model.PasteRequest
 		if err := c.ShouldBindJSON(&req); err != nil {
 			model.HandleResponse(c, http.StatusBadRequest, model.ErrorValidationFailed, nil)
 			return
 		}
 
-		if err := svc.CreatePaste(model.Paste{
+		if err := svc.CreatePaste(ctx, model.Paste{
 			ID:        idgen.GenerateUUID(),
 			Title:     req.Title,
+			Language:  req.Language,
 			Content:   req.Content,
 			CreatedAt: time.Now().UTC(),
 			ExpiresAt: time.Now().UTC().Add(req.Expire.Duration()),
@@ -129,5 +137,87 @@ func CreatePasteHandler(svc service.PasteService) gin.HandlerFunc {
 			return
 		}
 		model.HandleResponse(c, http.StatusCreated, model.Success, nil)
+	}
+}
+
+// UpdatePasteHandler godoc
+//
+//	@Summary		Paste 업데이트
+//	@Description	Paste 텍스트를 업데이트 및 저장합니다.
+//	@Tags			pastes:test
+//	@Accept			json
+//	@Produce		json
+//	@Param			id		path		string	true	"Paste ID"
+//	@Param			paste	body		model.PasteUpdateRequest	true	"Paste update Content"
+//	@Success		200		{object}	model.ResponseFormat
+//	@Failure		400		{object}	model.ResponseFormat
+//	@Router			/paste/{id} [put]
+func UpdatePasteHandler(svc service.PasteService) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		ctx := context.WithValue(c.Request.Context(), model.ContextRequestID, idgen.GenerateUUID())
+
+		id := c.Param("id")
+		var req model.PasteUpdateRequest
+		if err := c.ShouldBindJSON(&req); err != nil {
+			fmt.Println(err)
+			model.HandleResponse(c, http.StatusBadRequest, model.ErrorValidationFailed, nil)
+			return
+		}
+		fields := make(map[string]interface{})
+
+		if req.Title != nil {
+			fields["title"] = *req.Title
+		}
+
+		if req.Content != nil {
+			fields["content"] = *req.Content
+		}
+
+		if req.Language != nil {
+			fields["language"] = *req.Language
+		}
+
+		if req.Expire != nil {
+			if !req.Expire.IsValid() {
+				model.HandleResponse(c, http.StatusBadRequest, model.ErrorValidationFailed, nil)
+				return
+			}
+			fields["expires_at"] = time.Now().Add(req.Expire.Duration())
+		}
+
+		if len(fields) == 0 {
+			model.HandleResponse(c, http.StatusBadRequest, model.ErrorNoUpdatableField, nil)
+			return
+		}
+
+		updated, err := svc.ModifyPaste(ctx, id, fields)
+		if err != nil {
+			model.HandleResponse(c, http.StatusInternalServerError, model.ErrorInternalServer, nil)
+			return
+		}
+		model.HandleResponse(c, http.StatusOK, model.SuccessPasteUpdated, updated)
+	}
+}
+
+// RemovePasteHandler godoc
+//
+//	@Summary		Paste 삭제
+//	@Description	Paste 텍스트를 삭제합니다.
+//	@Tags			pastes:test
+//	@Accept			json
+//	@Produce		json
+//	@Param			id		path		string	true	"Paste ID"
+//	@Success		200		{object}	model.ResponseFormat
+//	@Failure		400		{object}	model.ResponseFormat
+//	@Router			/paste/{id} [put]
+func RemovePasteHandler(svc service.PasteService) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		ctx := context.WithValue(c.Request.Context(), model.ContextRequestID, idgen.GenerateUUID())
+		id := c.Param("id")
+		if err := svc.DeletePaste(ctx, id); err != nil {
+			model.HandleResponse(c, http.StatusInternalServerError, model.ErrorDatabase, nil)
+			return
+		}
+		model.HandleResponse(c, http.StatusNoContent, model.Success, nil)
 	}
 }

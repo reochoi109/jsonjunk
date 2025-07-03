@@ -31,11 +31,14 @@ definitions:
         - 2
         - 3
         - 4
+      language:
+        type: string
       title:
         type: string
     required:
     - content
     - expire
+    - language
     - title
     type: object
   model.PasteResponse:
@@ -49,10 +52,24 @@ definitions:
       id:
         example: abc123
         type: string
+      language:
+        type: string
       title:
         type: string
     required:
+    - language
     - title
+    type: object
+  model.PasteUpdateRequest:
+    properties:
+      content:
+        type: string
+      expire:
+        $ref: '#/definitions/model.ExpireOption'
+      language:
+        type: string
+      title:
+        type: string
     type: object
   model.ResponseFormat:
     properties:
@@ -72,9 +89,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: |-
-        새로운 Paste 텍스트를 생성하고 저장합니다.
-        expire
+      description: 새로운 Paste 텍스트를 생성하고 저장합니다.
       parameters:
       - description: Paste Content
         in: body
@@ -126,6 +141,30 @@ paths:
       summary: Paste 조회
       tags:
       - pastes
+    put:
+      consumes:
+      - application/json
+      description: Paste 텍스트를 삭제합니다.
+      parameters:
+      - description: Paste ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/model.ResponseFormat'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/model.ResponseFormat'
+      summary: Paste 삭제
+      tags:
+      - pastes:test
   /paste/list:
     get:
       consumes:

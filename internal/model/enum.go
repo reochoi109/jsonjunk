@@ -2,6 +2,12 @@ package model
 
 import "time"
 
+// ExpireOption defines the available expiration durations
+//
+// 1 = 6 Hours
+// 2 = 12 Hours
+// 3 = 1 Day
+// 4 = 7 Days
 type ExpireOption int
 
 const (

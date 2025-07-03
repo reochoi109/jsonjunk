@@ -17,7 +17,7 @@ const docTemplate = `{
     "paths": {
         "/paste": {
             "post": {
-                "description": "새로운 Paste 텍스트를 생성하고 저장합니다.\nexpire",
+                "description": "새로운 Paste 텍스트를 생성하고 저장합니다.",
                 "consumes": [
                     "application/json"
                 ],
@@ -191,6 +191,42 @@ const docTemplate = `{
                         }
                     }
                 }
+            },
+            "put": {
+                "description": "Paste 텍스트를 삭제합니다.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "pastes:test"
+                ],
+                "summary": "Paste 삭제",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Paste ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/model.ResponseFormat"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/model.ResponseFormat"
+                        }
+                    }
+                }
             }
         }
     },
@@ -226,6 +262,7 @@ const docTemplate = `{
             "required": [
                 "content",
                 "expire",
+                "language",
                 "title"
             ],
             "properties": {
@@ -245,6 +282,9 @@ const docTemplate = `{
                         }
                     ]
                 },
+                "language": {
+                    "type": "string"
+                },
                 "title": {
                     "type": "string"
                 }
@@ -253,6 +293,7 @@ const docTemplate = `{
         "model.PasteResponse": {
             "type": "object",
             "required": [
+                "language",
                 "title"
             ],
             "properties": {
@@ -268,6 +309,26 @@ const docTemplate = `{
                 "id": {
                     "type": "string",
                     "example": "abc123"
+                },
+                "language": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.PasteUpdateRequest": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "type": "string"
+                },
+                "expire": {
+                    "$ref": "#/definitions/model.ExpireOption"
+                },
+                "language": {
+                    "type": "string"
                 },
                 "title": {
                     "type": "string"

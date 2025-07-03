@@ -2,6 +2,7 @@
 package logger
 
 import (
+	"jsonjunk/config"
 	"os"
 
 	"go.uber.org/zap"
@@ -10,13 +11,20 @@ import (
 
 var Log *zap.Logger
 
-// Init 은 zap 로거를 초기화합니다.
-// isProd 가 true 이면 JSON 포맷, false 이면 컬러 콘솔 포맷을 사용합니다.
-func Init(isProd bool) {
+func Init(cfg *config.Config) {
 	var core zapcore.Core
 
-	// 로그 레벨 설정: Info 이상만 출력
-	level := zapcore.InfoLevel
+	var level zapcore.Level
+	switch cfg.LogLevel {
+	case "debug":
+		level = zapcore.DebugLevel
+	case "warn":
+		level = zapcore.WarnLevel
+	case "error":
+		level = zapcore.ErrorLevel
+	case "info":
+		level = zapcore.InfoLevel
+	}
 
 	// 로그 출력 포맷 설정
 	encoderCfg := zapcore.EncoderConfig{
@@ -33,7 +41,7 @@ func Init(isProd bool) {
 		EncodeCaller:   zapcore.ShortCallerEncoder,                         // 호출 위치 (short 형식)
 	}
 
-	if isProd {
+	if cfg.ServiceMode == "prod" {
 		// 프로덕션 모드: JSON 로그
 		core = zapcore.NewCore(
 			zapcore.NewJSONEncoder(encoderCfg), // 1. JSON 포맷으로 인코딩 (key-value 구조)
@@ -53,7 +61,7 @@ func Init(isProd bool) {
 	Log = zap.New(
 		core,                                  // zapcore.Core (콘솔 or JSON 포맷 + 출력 대상 + 레벨 포함)
 		zap.AddCaller(),                       // 호출 위치(file:line) 로그에 추가 (ex. app.go:123)
-		zap.AddStacktrace(zapcore.ErrorLevel), // ERROR 이상일 때만 스택트레이스 포함
-		// zap.Fields(),                          // 모든 로그에 공통 필드 추가
+		zap.AddStacktrace(zapcore.PanicLevel), // ERROR 이상일 때만 스택트레이스 포함
+		//zap.Fields(),                          // 모든 로그에 공통 필드 추가
 	)
 }
