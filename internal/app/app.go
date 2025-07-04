@@ -1,9 +1,11 @@
 package app
 
 import (
+	"context"
 	"jsonjunk/config"
 	"jsonjunk/internal/repository"
 	"jsonjunk/internal/router"
+	"jsonjunk/internal/scheduler"
 	"jsonjunk/internal/service"
 	logger "jsonjunk/pkg/logging"
 
@@ -31,11 +33,25 @@ func Run() {
 		zap.String("mongo_url", cfg.MongoURI),
 	)
 
-	start(cfg.DBName)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	// go listenForShutdown(cancel)
+	start(ctx, cfg.DBName)
 }
 
-func start(dbName string) {
-	repo := repository.NewMongoPasteRepository(dbName)
-	svc := service.NewPasteService(repo)
+func start(ctx context.Context, dbName string) {
+	scheduler.Open(ctx)
+	repo := repository.NewMongoPasteRepository(ctx, dbName)
+	svc := service.NewPasteService(ctx, repo)
 	router.Run(svc)
 }
+
+// func listenForShutdown(cancelFunc context.CancelFunc) {
+// 	sigChan := make(chan os.Signal, 1)
+// 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM) // ctrl + c or kill
+
+// 	<-sigChan
+// 	logger.Log.Info("shutdown service...")
+// 	cancelFunc()
+// }

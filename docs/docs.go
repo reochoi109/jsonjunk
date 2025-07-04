@@ -276,17 +276,14 @@ const docTemplate = `{
         },
         "/raw/{id}": {
             "get": {
-                "description": "데이터를 조회한다.",
-                "consumes": [
-                    "application/json"
-                ],
+                "description": "줄바꿈과 포맷 그대로의 원본 텍스트를 반환합니다.",
                 "produces": [
-                    "application/json"
+                    "text/plain"
                 ],
                 "tags": [
                     "api"
                 ],
-                "summary": "데이터를 조회한다.",
+                "summary": "원본 Paste 콘텐츠 조회",
                 "parameters": [
                     {
                         "type": "string",
@@ -296,7 +293,23 @@ const docTemplate = `{
                         "required": true
                     }
                 ],
-                "responses": {}
+                "responses": {
+                    "200": {
+                        "description": "원본 콘텐츠",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
             }
         }
     },

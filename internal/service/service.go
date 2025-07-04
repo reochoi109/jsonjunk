@@ -2,8 +2,10 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"jsonjunk/internal/model"
 	"jsonjunk/internal/repository"
+	"jsonjunk/internal/scheduler"
 	"time"
 
 	"go.uber.org/zap"
@@ -23,8 +25,34 @@ type pasteService struct {
 	repo repository.Repository
 }
 
-func NewPasteService(repo repository.Repository) PasteService {
-	return &pasteService{repo: repo}
+func NewPasteService(ctx context.Context, repo repository.Repository) PasteService {
+	service := &pasteService{repo: repo}
+	service.internal(ctx)
+	return service
+}
+
+func (s *pasteService) internal(ctx context.Context) {
+	s.schedule(ctx)
+}
+
+func (s *pasteService) schedule(ctx context.Context) {
+	scheduler.Register(&scheduler.Task{
+		Value:     "Title",
+		ExecuteAt: time.Now(),
+		Interval:  time.Second * 1,
+		Ctx:       ctx,
+		Action: func(parent context.Context) {
+			ctx, cancel := context.WithTimeout(ctx, time.Second*5)
+			defer cancel()
+			select {
+			case <-ctx.Done():
+				fmt.Println("--------------")
+				return
+			default:
+				fmt.Println("=============================== : ", time.Now())
+			}
+		},
+	})
 }
 
 func (s *pasteService) RegisterPaste(ctx context.Context, p model.Paste) error {

@@ -10,14 +10,15 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// GetPaste godoc
+// GetPasteRaw godoc
 //
-//	@Summary		데이터를 조회한다.
-//	@Description	데이터를 조회한다.
+//	@Summary		원본 Paste 콘텐츠 조회
+//	@Description	줄바꿈과 포맷 그대로의 원본 텍스트를 반환합니다.
 //	@Tags			api
-//	@Accept			json
-//	@Produce		json
-//	@Param			id	path		string	true	"Paste ID"
+//	@Produce		plain
+//	@Param			id	path	string	true	"Paste ID"
+//	@Success		200		{string}	string	"원본 콘텐츠"
+//	@Failure		404		{object}	map[string]string
 //	@Router			/raw/{id} [get]
 func GetPasteJsonHandler(svc service.PasteService) gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -28,14 +29,6 @@ func GetPasteJsonHandler(svc service.PasteService) gin.HandlerFunc {
 			c.JSON(http.StatusNotFound, gin.H{"message": "not found"})
 			return
 		}
-		response := model.PasteResponse{
-			ID:        paste.ID,
-			Title:     paste.Title,
-			Language:  paste.Language,
-			CreatedAt: paste.CreatedAt.Format("2006-01-02 15:04:05"),
-			ExpiresAt: paste.ExpiresAt.Format("2006-01-02 15:04:05"),
-			Content:   paste.Content,
-		}
-		c.JSON(http.StatusOK, response)
+		c.String(http.StatusOK, paste.Content)
 	}
 }

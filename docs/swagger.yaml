@@ -248,9 +248,7 @@ paths:
       - pastes:type
   /raw/{id}:
     get:
-      consumes:
-      - application/json
-      description: 데이터를 조회한다.
+      description: 줄바꿈과 포맷 그대로의 원본 텍스트를 반환합니다.
       parameters:
       - description: Paste ID
         in: path
@@ -258,9 +256,19 @@ paths:
         required: true
         type: string
       produces:
-      - application/json
-      responses: {}
-      summary: 데이터를 조회한다.
+      - text/plain
+      responses:
+        "200":
+          description: 원본 콘텐츠
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: 원본 Paste 콘텐츠 조회
       tags:
       - api
 swagger: "2.0"

@@ -8,6 +8,7 @@ import (
 	"jsonjunk/internal/model"
 	"jsonjunk/pkg/idgen"
 	logger "jsonjunk/pkg/logging"
+	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -19,7 +20,7 @@ type mongoRepository struct {
 	coll *mongo.Collection
 }
 
-func NewMongoPasteRepository(dbName string) Repository {
+func NewMongoPasteRepository(ctx context.Context, dbName string) Repository {
 	coll := config.MongoClient.Database(dbName).Collection("paste")
 
 	indexModel := mongo.IndexModel{
@@ -115,13 +116,24 @@ func (r *mongoRepository) UpdatePasteByID(ctx context.Context, id string, fields
 }
 
 func (r *mongoRepository) DeletePasteByID(ctx context.Context, id string) error {
-	filter := bson.M{"id": id}
-	result, err := r.coll.DeleteOne(ctx, filter)
-	if err != nil {
-		return fmt.Errorf("failed to delete paste , %w", err)
+	filter := bson.M{
+		"id":         id,
+		"is_deleted": bson.M{"$ne": true}, // 이미 삭제된 건 제외
 	}
 
-	if result.DeletedCount == 0 {
+	update := bson.M{
+		"$set": bson.M{
+			"is_deleted": true,
+			"deleted_at": time.Now(),
+		},
+	}
+
+	result, err := r.coll.UpdateOne(ctx, filter, update)
+	if err != nil {
+		return fmt.Errorf("%w: %v", model.ErrDatabase, err)
+	}
+
+	if result.MatchedCount == 0 {
 		return model.ErrPasteNotFound
 	}
 	return nil
