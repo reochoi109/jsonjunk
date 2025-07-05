@@ -8,6 +8,9 @@ import (
 	"jsonjunk/internal/scheduler"
 	"jsonjunk/internal/service"
 	logger "jsonjunk/pkg/logging"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/joho/godotenv"
 	"go.uber.org/zap"
@@ -36,7 +39,7 @@ func Run() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	// go listenForShutdown(cancel)
+	go listenForShutdown(cancel)
 	start(ctx, cfg.DBName)
 }
 
@@ -44,14 +47,14 @@ func start(ctx context.Context, dbName string) {
 	scheduler.Open(ctx)
 	repo := repository.NewMongoPasteRepository(ctx, dbName)
 	svc := service.NewPasteService(ctx, repo)
-	router.Run(svc)
+	router.Run(ctx, svc)
 }
 
-// func listenForShutdown(cancelFunc context.CancelFunc) {
-// 	sigChan := make(chan os.Signal, 1)
-// 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM) // ctrl + c or kill
+func listenForShutdown(cancelFunc context.CancelFunc) {
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 
-// 	<-sigChan
-// 	logger.Log.Info("shutdown service...")
-// 	cancelFunc()
-// }
+	<-sigChan
+	logger.Log.Info("shutdown service...")
+	cancelFunc()
+}

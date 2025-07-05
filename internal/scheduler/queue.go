@@ -8,11 +8,11 @@ import (
 
 type Task struct {
 	Value     string
-	ExecuteAt time.Time     // 다음 실행 시간 (우선순위 기준)
-	Interval  time.Duration // 반복 주기 (0이면 단발성)
-	Index     int           // 내부 heap 인덱스 (Fix나 Remove 시 사용 가능)
-	Action    func(parent context.Context)
-	Ctx       context.Context
+	ExecuteAt time.Time                 // 다음 실행 시간 (우선순위 기준)
+	Interval  time.Duration             // 반복 주기 (0이면 단발성)
+	Index     int                       // 내부 heap 인덱스 (Fix나 Remove 시 사용 가능)
+	Action    func(ctx context.Context) // 실행 함수
+	Ctx       context.Context           // context
 }
 type PriorityQueue []*Task
 
@@ -21,7 +21,7 @@ var Scheduler *PriorityQueue
 func Open(ctx context.Context) {
 	Scheduler = &PriorityQueue{}
 	heap.Init(Scheduler)
-	StartScheduler(ctx, Scheduler)
+	run(ctx, Scheduler)
 }
 
 func Register(item *Task) {

@@ -203,7 +203,7 @@ const docTemplate = `{
                 "tags": [
                     "pastes:test"
                 ],
-                "summary": "Paste 업데이트",
+                "summary": "Paste 업데이트 : 테스트 용",
                 "parameters": [
                     {
                         "type": "string",
@@ -248,7 +248,7 @@ const docTemplate = `{
                 "tags": [
                     "pastes:test"
                 ],
-                "summary": "Paste 삭제",
+                "summary": "Paste 삭제 : : 테스트 용",
                 "parameters": [
                     {
                         "type": "string",

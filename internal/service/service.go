@@ -2,10 +2,8 @@ package service
 
 import (
 	"context"
-	"fmt"
 	"jsonjunk/internal/model"
 	"jsonjunk/internal/repository"
-	"jsonjunk/internal/scheduler"
 	"time"
 
 	"go.uber.org/zap"
@@ -31,30 +29,6 @@ func NewPasteService(ctx context.Context, repo repository.Repository) PasteServi
 	return service
 }
 
-func (s *pasteService) internal(ctx context.Context) {
-	s.schedule(ctx)
-}
-
-func (s *pasteService) schedule(ctx context.Context) {
-	scheduler.Register(&scheduler.Task{
-		Value:     "Title",
-		ExecuteAt: time.Now(),
-		Interval:  time.Second * 1,
-		Ctx:       ctx,
-		Action: func(parent context.Context) {
-			ctx, cancel := context.WithTimeout(ctx, time.Second*5)
-			defer cancel()
-			select {
-			case <-ctx.Done():
-				fmt.Println("--------------")
-				return
-			default:
-				fmt.Println("=============================== : ", time.Now())
-			}
-		},
-	})
-}
-
 func (s *pasteService) RegisterPaste(ctx context.Context, p model.Paste) error {
 	ctx, cancel := context.WithTimeout(ctx, mongoTimeout)
 	defer cancel()
@@ -63,7 +37,8 @@ func (s *pasteService) RegisterPaste(ctx context.Context, p model.Paste) error {
 	log.Info("Creating new paste", zap.String("id", p.ID))
 
 	if err := s.repo.InsertPaste(ctx, p); err != nil {
-		log.Error("Failed to insert paste", zap.String("id", p.ID), zap.Error(err))
+		traceID := ctx.Value(model.ContextTraceID)
+		log.Error("Failed to insert paste", zap.String(string(model.ContextTraceID), traceID.(string)), zap.String("id", p.ID), zap.Error(err))
 		return err
 	}
 	return nil
@@ -78,7 +53,8 @@ func (s *pasteService) GetPasteByID(ctx context.Context, id string) (*model.Past
 
 	paste, err := s.repo.SearchPasteByID(ctx, id)
 	if err != nil {
-		log.Error("Failed to search paste", zap.String("id", id), zap.Error(err))
+		traceID := ctx.Value(model.ContextTraceID)
+		log.Error("Failed to search paste", zap.String(string(model.ContextTraceID), traceID.(string)), zap.String("id", id), zap.Error(err))
 		return nil, err
 	}
 	return paste, nil
@@ -92,7 +68,8 @@ func (s *pasteService) GetListPastes(ctx context.Context) ([]*model.Paste, error
 
 	pastes, err := s.repo.SearchPasteList(ctx)
 	if err != nil {
-		log.Error("Failed to search paste list", zap.Error(err))
+		traceID := ctx.Value(model.ContextTraceID)
+		log.Error("Failed to search paste list", zap.String(string(model.ContextTraceID), traceID.(string)), zap.Error(err))
 		return nil, err
 	}
 	return pastes, nil
@@ -107,7 +84,8 @@ func (s *pasteService) UpdatePasteByID(ctx context.Context, id string, fields ma
 
 	paste, err := s.repo.UpdatePasteByID(ctx, id, fields)
 	if err != nil {
-		log.Error("Failed to modify paste", zap.String("id", id), zap.Error(err))
+		traceID := ctx.Value(model.ContextTraceID)
+		log.Error("Failed to modify paste", zap.String(string(model.ContextTraceID), traceID.(string)), zap.String("id", id), zap.Error(err))
 		return paste, err
 	}
 	return paste, nil
@@ -121,7 +99,8 @@ func (s *pasteService) RemovePasteByID(ctx context.Context, id string) error {
 	log.Info("Deleting paste", zap.String("id", id))
 
 	if err := s.repo.DeletePasteByID(ctx, id); err != nil {
-		log.Error("Failed to delete paste", zap.String("id", id), zap.Error(err))
+		traceID := ctx.Value(model.ContextTraceID)
+		log.Error("Failed to delete paste", zap.String(string(model.ContextTraceID), traceID.(string)), zap.String("id", id), zap.Error(err))
 		return err
 	}
 	return nil

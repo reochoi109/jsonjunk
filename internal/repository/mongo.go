@@ -23,12 +23,25 @@ type mongoRepository struct {
 func NewMongoPasteRepository(ctx context.Context, dbName string) Repository {
 	coll := config.MongoClient.Database(dbName).Collection("paste")
 
+	// index : id
 	indexModel := mongo.IndexModel{
 		Keys:    bson.D{{Key: "id", Value: 1}}, // 1 오름 ,-1 내림
 		Options: options.Index().SetUnique(true),
 	}
 
-	if _, err := coll.Indexes().CreateOne(context.TODO(), indexModel); err != nil {
+	// index : is_deleted + expired_at
+	compoundIndex := mongo.IndexModel{
+		Keys: bson.D{{Key: "is_deleted", Value: 1}, {Key: "expires_at", Value: 1}},
+	}
+
+	// index : expires_at , auto remove (unknown user)
+	ttlIndex := mongo.IndexModel{
+		Keys:    bson.D{{Key: "anonymous_expires_at", Value: 1}},
+		Options: options.Index().SetExpireAfterSeconds(0),
+	}
+
+	indexes := []mongo.IndexModel{indexModel, compoundIndex, ttlIndex}
+	if _, err := coll.Indexes().CreateMany(ctx, indexes); err != nil {
 		logger.Log.Error("failed to create index on 'id' field",
 			zap.String("collection", "paste"),
 			zap.Error(err),
@@ -118,7 +131,7 @@ func (r *mongoRepository) UpdatePasteByID(ctx context.Context, id string, fields
 func (r *mongoRepository) DeletePasteByID(ctx context.Context, id string) error {
 	filter := bson.M{
 		"id":         id,
-		"is_deleted": bson.M{"$ne": true}, // 이미 삭제된 건 제외
+		"is_deleted": bson.M{"$ne": true},
 	}
 
 	update := bson.M{
@@ -137,4 +150,36 @@ func (r *mongoRepository) DeletePasteByID(ctx context.Context, id string) error 
 		return model.ErrPasteNotFound
 	}
 	return nil
+}
+
+func (r *mongoRepository) DeleteSoftPaste(ctx context.Context) (matchedCount int, modifiedCount int, err error) {
+	filter := bson.M{
+		"user_id":    bson.M{"$ne": ""},
+		"expires_at": bson.M{"$lt": time.Now()},
+		"is_deleted": bson.M{"$ne": true},
+	}
+
+	update := bson.M{
+		"$set": bson.M{
+			"is_deleted": true,
+			"deleted_at": time.Now(),
+		},
+	}
+
+	result, err := r.coll.UpdateMany(ctx, filter, update)
+	if err != nil {
+		return 0, 0, fmt.Errorf("%w: %v", model.ErrDatabase, err)
+	}
+	return int(result.MatchedCount), int(result.ModifiedCount), nil
+}
+
+func (r *mongoRepository) DeletHardPaste(ctx context.Context) (removeCount int, err error) {
+	filter := bson.M{
+		"is_deleted": true,
+	}
+	result, err := r.coll.DeleteMany(ctx, filter)
+	if err != nil {
+		return 0, fmt.Errorf("%w: %v", model.ErrDatabase, err)
+	}
+	return int(result.DeletedCount), nil
 }

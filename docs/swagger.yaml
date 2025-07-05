@@ -132,7 +132,7 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/model.ResponseFormat'
-      summary: Paste 삭제
+      summary: 'Paste 삭제 : : 테스트 용'
       tags:
       - pastes:test
     get:
@@ -191,7 +191,7 @@ paths:
           description: Bad Request
           schema:
             $ref: '#/definitions/model.ResponseFormat'
-      summary: Paste 업데이트
+      summary: 'Paste 업데이트 : 테스트 용'
       tags:
       - pastes:test
   /api/v1/paste/list:

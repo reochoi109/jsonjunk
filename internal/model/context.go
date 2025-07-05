@@ -10,12 +10,12 @@ import (
 type contextKey string
 
 const (
-	ContextRequestID contextKey = "requestID"
+	ContextTraceID contextKey = "trace_id"
 )
 
 func WithContext(ctx context.Context) *zap.Logger {
-	if reqID, ok := ctx.Value(ContextRequestID).(string); ok {
-		return logger.Log.With(zap.String("requestID", reqID))
+	if reqID, ok := ctx.Value(ContextTraceID).(string); ok {
+		return logger.Log.With(zap.String("trace_id", reqID))
 	}
 	return logger.Log
 }

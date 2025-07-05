@@ -11,4 +11,7 @@ type Repository interface {
 	SearchPasteList(ctx context.Context) ([]*model.Paste, error)
 	UpdatePasteByID(ctx context.Context, id string, fields map[string]interface{}) (model.Paste, error)
 	DeletePasteByID(ctx context.Context, id string) error
+
+	DeleteSoftPaste(ctx context.Context) (matchedCount int, modifiedCount int, err error)
+	DeletHardPaste(ctx context.Context) (removeCount int, err error)
 }
