@@ -23,6 +23,10 @@ import (
 func GetPasteJsonHandler(svc service.PasteService) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx := context.WithValue(c.Request.Context(), model.ContextTraceID, idgen.GenerateTraceID())
+		log := model.WithContext(ctx)
+		log.Debug("GetPasteJsonHandler called [Start]")
+		defer log.Debug("GetPasteJsonHandler [End]")
+
 		id := c.Param("id")
 		paste, err := svc.GetPasteByID(ctx, id)
 		if err != nil || paste == nil {
