@@ -1,9 +1,7 @@
 package handler
 
 import (
-	"context"
 	"errors"
-	"fmt"
 	"jsonjunk/internal/model"
 	"jsonjunk/internal/service"
 	"jsonjunk/pkg/idgen"
@@ -57,7 +55,10 @@ func GetExpireType(c *gin.Context) {
 //	@Router			/api/v1/paste/list [get]
 func GetSearchPastedList(svc service.PasteService) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		ctx := context.WithValue(c.Request.Context(), model.ContextTraceID, idgen.GenerateUUID())
+		ctx := c.Request.Context()
+		log := model.WithContext(ctx)
+		log.Debug("GetSearchPastedList called [Start]")
+
 		datas, err := svc.GetListPastes(ctx)
 		if err != nil {
 			if errors.Is(err, model.ErrDatabase) {
@@ -78,6 +79,7 @@ func GetSearchPastedList(svc service.PasteService) gin.HandlerFunc {
 				ExpiresAt: v.ExpiresAt.Format("2006-01-02 15:04:05"),
 			}
 		}
+		log.Debug("GetSearchPastedList [End]")
 		model.HandleResponse(c, http.StatusOK, model.Success, response)
 	}
 }
@@ -95,7 +97,10 @@ func GetSearchPastedList(svc service.PasteService) gin.HandlerFunc {
 //	@Router			/api/v1/paste/{id} [get]
 func GetPasteHandler(svc service.PasteService) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		ctx := context.WithValue(c.Request.Context(), model.ContextTraceID, idgen.GenerateUUID())
+		ctx := c.Request.Context()
+		log := model.WithContext(ctx)
+		log.Debug("GetPasteHandler called [Start]")
+
 		id := c.Param("id")
 		paste, err := svc.GetPasteByID(ctx, id)
 		if err != nil || paste == nil {
@@ -110,6 +115,8 @@ func GetPasteHandler(svc service.PasteService) gin.HandlerFunc {
 			ExpiresAt: paste.ExpiresAt.Format("2006-01-02 15:04:05"),
 			Content:   paste.Content,
 		}
+
+		log.Debug("GetPasteHandler [End]")
 		model.HandleResponse(c, http.StatusOK, model.Success, response)
 	}
 }
@@ -127,7 +134,9 @@ func GetPasteHandler(svc service.PasteService) gin.HandlerFunc {
 //	@Router			/api/v1/paste [post]
 func CreatePasteHandler(svc service.PasteService) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		ctx := context.WithValue(c.Request.Context(), model.ContextTraceID, idgen.GenerateUUID())
+		ctx := c.Request.Context()
+		log := model.WithContext(ctx)
+		log.Debug("CreatePasteHandler called [Start]")
 
 		var req model.PasteRequest
 		if err := c.ShouldBindJSON(&req); err != nil {
@@ -136,7 +145,7 @@ func CreatePasteHandler(svc service.PasteService) gin.HandlerFunc {
 		}
 
 		paste := model.Paste{
-			ID:                 idgen.GenerateUUID(),
+			ID:                 idgen.GeneratePasteID(),
 			Title:              req.Title,
 			Language:           req.Language,
 			Content:            req.Content,
@@ -153,6 +162,7 @@ func CreatePasteHandler(svc service.PasteService) gin.HandlerFunc {
 		case err != nil:
 			model.HandleResponse(c, http.StatusInternalServerError, model.ErrorInternalServer, nil)
 		default:
+			log.Debug("CreatePasteHandler [End]")
 			model.HandleResponse(c, http.StatusCreated, model.SuccessPasteCreated, nil)
 		}
 	}
@@ -172,12 +182,13 @@ func CreatePasteHandler(svc service.PasteService) gin.HandlerFunc {
 //	@Router			/api/v1/paste/{id} [put]
 func UpdatePasteHandler(svc service.PasteService) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		ctx := context.WithValue(c.Request.Context(), model.ContextTraceID, idgen.GenerateUUID())
+		ctx := c.Request.Context()
+		log := model.WithContext(ctx)
+		log.Debug("UpdatePasteHandler called [Start]")
 
 		id := c.Param("id")
 		var req model.PasteUpdateRequest
 		if err := c.ShouldBindJSON(&req); err != nil {
-			fmt.Println(err)
 			model.HandleResponse(c, http.StatusBadRequest, model.ErrorValidationFailed, nil)
 			return
 		}
@@ -217,6 +228,7 @@ func UpdatePasteHandler(svc service.PasteService) gin.HandlerFunc {
 		case err != nil:
 			model.HandleResponse(c, http.StatusInternalServerError, model.ErrorInternalServer, nil)
 		default:
+			log.Debug("UpdatePasteHandler [End]")
 			model.HandleResponse(c, http.StatusOK, model.SuccessPasteUpdated, updated)
 		}
 	}
@@ -235,7 +247,10 @@ func UpdatePasteHandler(svc service.PasteService) gin.HandlerFunc {
 //	@Router			/api/v1/paste/{id} [delete]
 func RemovePasteHandler(svc service.PasteService) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		ctx := context.WithValue(c.Request.Context(), model.ContextTraceID, idgen.GenerateUUID())
+		ctx := c.Request.Context()
+		log := model.WithContext(ctx)
+		log.Debug("RemovePasteHandler called [Start]")
+
 		id := c.Param("id")
 		err := svc.RemovePasteByID(ctx, id)
 		switch {
@@ -244,6 +259,7 @@ func RemovePasteHandler(svc service.PasteService) gin.HandlerFunc {
 		case err != nil:
 			model.HandleResponse(c, http.StatusInternalServerError, model.ErrorDatabase, nil)
 		default:
+			log.Debug("RemovePasteHandler called [End]")
 			model.HandleResponse(c, http.StatusNoContent, model.Success, nil)
 		}
 	}

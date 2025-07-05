@@ -22,7 +22,7 @@ import (
 //	@Router			/raw/{id} [get]
 func GetPasteJsonHandler(svc service.PasteService) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		ctx := context.WithValue(c.Request.Context(), model.ContextTraceID, idgen.GenerateUUID())
+		ctx := context.WithValue(c.Request.Context(), model.ContextTraceID, idgen.GenerateTraceID())
 		id := c.Param("id")
 		paste, err := svc.GetPasteByID(ctx, id)
 		if err != nil || paste == nil {

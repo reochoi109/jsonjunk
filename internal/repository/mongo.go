@@ -68,7 +68,7 @@ func (r *mongoRepository) InsertPaste(ctx context.Context, p model.Paste) error 
 				}
 			}
 			if duplicate {
-				p.ID = idgen.GenerateUUID()
+				p.ID = idgen.GeneratePasteID()
 				continue
 			}
 		}

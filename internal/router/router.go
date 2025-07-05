@@ -12,12 +12,14 @@ import (
 
 	_ "jsonjunk/docs"
 	"jsonjunk/internal/handler"
+	"jsonjunk/internal/middleware"
 	"jsonjunk/internal/service"
 	logger "jsonjunk/pkg/logging"
 )
 
 func Run(ctx context.Context, svc service.PasteService) {
 	r := gin.Default()
+	r.Use(middleware.UseTraceID())
 
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
