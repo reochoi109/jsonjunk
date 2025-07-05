@@ -12,9 +12,9 @@ import (
 const mongoTimeout = 5 * time.Second
 
 type PasteService interface {
-	RegisterPaste(ctx context.Context, p model.Paste) error
-	GetPasteByID(ctx context.Context, id string) (*model.Paste, error)
-	GetListPastes(ctx context.Context) ([]*model.Paste, error)
+	RegisterPaste(ctx context.Context, req model.PasteRequest) error
+	GetPasteByID(ctx context.Context, id string) (*model.PasteResponse, error)
+	GetListPastes(ctx context.Context) ([]model.PasteResponse, error)
 	UpdatePasteByID(ctx context.Context, id string, fields map[string]interface{}) (paste model.Paste, err error)
 	RemovePasteByID(ctx context.Context, id string) error
 }
@@ -29,23 +29,26 @@ func NewPasteService(ctx context.Context, repo repository.Repository) PasteServi
 	return service
 }
 
-func (s *pasteService) RegisterPaste(ctx context.Context, p model.Paste) error {
+func (s *pasteService) RegisterPaste(ctx context.Context, req model.PasteRequest) error {
 	ctx, cancel := context.WithTimeout(ctx, mongoTimeout)
 	defer cancel()
 
-	log := model.WithContext(ctx)
-	log.Debug("Creating new paste [Start]", zap.String("id", p.ID))
-	defer log.Debug("Creating new paste [End]", zap.String("id", p.ID))
+	paste := model.NewPasteFromRequest(req)
 
-	if err := s.repo.InsertPaste(ctx, p); err != nil {
+	log := model.WithContext(ctx)
+	log.Debug("Creating new paste [Start]", zap.String("id", paste.ID))
+	defer log.Debug("Creating new paste [End]", zap.String("id", paste.ID))
+
+	if err := s.repo.InsertPaste(ctx, paste); err != nil {
 		traceID := ctx.Value(model.ContextTraceID)
-		log.Error("Failed to insert paste", zap.String(string(model.ContextTraceID), traceID.(string)), zap.String("id", p.ID), zap.Error(err))
+		log.Error("Failed to insert paste", zap.String(string(model.ContextTraceID), traceID.(string)), zap.String("id", paste.ID), zap.Error(err))
 		return err
 	}
+
 	return nil
 }
 
-func (s *pasteService) GetPasteByID(ctx context.Context, id string) (*model.Paste, error) {
+func (s *pasteService) GetPasteByID(ctx context.Context, id string) (*model.PasteResponse, error) {
 	ctx, cancel := context.WithTimeout(ctx, mongoTimeout)
 	defer cancel()
 
@@ -58,11 +61,12 @@ func (s *pasteService) GetPasteByID(ctx context.Context, id string) (*model.Past
 		log.Error("Failed to search paste", zap.String(string(model.ContextTraceID), traceID.(string)), zap.String("id", id), zap.Error(err))
 		return nil, err
 	}
+	response := model.NewPasteResponse(*paste)
 	log.Debug("Searching paste by ID [End]", zap.String("id", id))
-	return paste, nil
+	return &response, nil
 }
 
-func (s *pasteService) GetListPastes(ctx context.Context) ([]*model.Paste, error) {
+func (s *pasteService) GetListPastes(ctx context.Context) ([]model.PasteResponse, error) {
 	ctx, cancel := context.WithTimeout(ctx, mongoTimeout)
 	defer cancel()
 
@@ -76,7 +80,12 @@ func (s *pasteService) GetListPastes(ctx context.Context) ([]*model.Paste, error
 		log.Error("Failed to search paste list", zap.String(string(model.ContextTraceID), traceID.(string)), zap.Error(err))
 		return nil, err
 	}
-	return pastes, nil
+
+	response := make([]model.PasteResponse, len(pastes))
+	for i, p := range pastes {
+		response[i] = model.NewPasteListResponse(*p)
+	}
+	return response, nil
 }
 
 func (s *pasteService) UpdatePasteByID(ctx context.Context, id string, fields map[string]interface{}) (model.Paste, error) {

@@ -47,7 +47,7 @@ func start(ctx context.Context, dbName string) {
 	scheduler.Open(ctx)
 	repo := repository.NewMongoPasteRepository(ctx, dbName)
 	svc := service.NewPasteService(ctx, repo)
-	router.Run(ctx, svc)
+	router.Run(ctx, "debug", svc)
 }
 
 func listenForShutdown(cancelFunc context.CancelFunc) {

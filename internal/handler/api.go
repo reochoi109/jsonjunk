@@ -28,11 +28,11 @@ func GetPasteJsonHandler(svc service.PasteService) gin.HandlerFunc {
 		defer log.Debug("GetPasteJsonHandler [End]")
 
 		id := c.Param("id")
-		paste, err := svc.GetPasteByID(ctx, id)
-		if err != nil || paste == nil {
+		response, err := svc.GetPasteByID(ctx, id)
+		if err != nil || response == nil {
 			c.JSON(http.StatusNotFound, gin.H{"message": "not found"})
 			return
 		}
-		c.String(http.StatusOK, paste.Content)
+		c.String(http.StatusOK, response.Content)
 	}
 }

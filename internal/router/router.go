@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
@@ -12,46 +13,73 @@ import (
 
 	_ "jsonjunk/docs"
 	"jsonjunk/internal/handler"
+	"jsonjunk/internal/helper"
 	"jsonjunk/internal/middleware"
+	"jsonjunk/internal/model"
 	"jsonjunk/internal/service"
-	logger "jsonjunk/pkg/logging"
 )
 
-func Run(ctx context.Context, svc service.PasteService) {
-	r := gin.Default()
+func NewRouter(mode string, svc service.PasteService) *gin.Engine {
+	gin.SetMode(mode)
+
+	r := gin.New()
+	r.Use(gin.Recovery())
+	r.Use(middleware.SecurityHeaders())
+
+	r.Use(func(c *gin.Context) {
+		start := time.Now()
+		c.Next()
+		latency := time.Since(start)
+		log := model.WithContext(c.Request.Context())
+		log.Info("Request",
+			zap.String("method", c.Request.Method),
+			zap.String("path", c.Request.URL.Path),
+			zap.Int("status", c.Writer.Status()),
+			zap.Duration("latency", latency),
+			zap.String("ip", c.ClientIP()),
+		)
+	})
+
+	r.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"*"},
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
+		AllowCredentials: true,
+		MaxAge:           12 * time.Hour,
+	}))
+
 	r.Use(middleware.UseTraceID())
 
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
-	api := r.Group("/raw")
-	RegisterAPI(api, svc)
+	RegisterAPI(r.Group("/raw"), svc)
+	api := r.Group("/api/v1")
+	RegisterPastes(api, svc)
 
-	group := r.Group("/api/v1")
-	RegisterPastes(group, svc)
+	return r
+}
+
+func Run(ctx context.Context, mode string, svc service.PasteService) {
+	r := NewRouter(mode, svc)
 
 	srv := &http.Server{
-		Addr:         ":8080",
+		Addr:         ":8080", // config에서 주입
 		Handler:      r,
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 10 * time.Second,
 		IdleTimeout:  30 * time.Second,
 	}
 
-	go func() {
-		<-ctx.Done()
-		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
-
-		if err := srv.Shutdown(shutdownCtx); err != nil {
-			logger.Log.Error("server shutdown failed", zap.Error(err))
-		} else {
-			logger.Log.Info("server shutdown completed")
-		}
-	}()
+	helper.GracefulShutdown(ctx, srv)
 
 	if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 		panic(err)
 	}
+
+	// HTTPs
+	// if err := srv.ListenAndServeTLS("cert.pem", "key.pem"); err != nil && err != http.ErrServerClosed {
+	// 	panic(err)
+	// }
 }
 
 func RegisterPastes(api *gin.RouterGroup, svc service.PasteService) {

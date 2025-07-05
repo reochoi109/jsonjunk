@@ -4,7 +4,6 @@ import (
 	"errors"
 	"jsonjunk/internal/model"
 	"jsonjunk/internal/service"
-	"jsonjunk/pkg/idgen"
 	"net/http"
 	"time"
 
@@ -60,7 +59,7 @@ func GetSearchPastedList(svc service.PasteService) gin.HandlerFunc {
 		log.Debug("GetSearchPastedList called [Start]")
 		defer log.Debug("GetSearchPastedList [End]")
 
-		datas, err := svc.GetListPastes(ctx)
+		response, err := svc.GetListPastes(ctx)
 		if err != nil {
 			if errors.Is(err, model.ErrDatabase) {
 				model.HandleResponse(c, http.StatusInternalServerError, model.ErrorDatabase, nil)
@@ -68,17 +67,6 @@ func GetSearchPastedList(svc service.PasteService) gin.HandlerFunc {
 			}
 			model.HandleResponse(c, http.StatusInternalServerError, model.ErrorInternalServer, nil)
 			return
-		}
-
-		response := make([]model.PasteResponse, len(datas))
-		for i, v := range datas {
-			response[i] = model.PasteResponse{
-				ID:        v.ID,
-				Title:     v.Title,
-				Language:  v.Language,
-				CreatedAt: v.CreatedAt.Format("2006-01-02 15:04:05"),
-				ExpiresAt: v.ExpiresAt.Format("2006-01-02 15:04:05"),
-			}
 		}
 		model.HandleResponse(c, http.StatusOK, model.Success, response)
 	}
@@ -103,20 +91,11 @@ func GetPasteHandler(svc service.PasteService) gin.HandlerFunc {
 		defer log.Debug("GetPasteHandler [End]")
 
 		id := c.Param("id")
-		paste, err := svc.GetPasteByID(ctx, id)
-		if err != nil || paste == nil {
+		response, err := svc.GetPasteByID(ctx, id)
+		if err != nil || response == nil {
 			model.HandleResponse(c, http.StatusNotFound, model.ErrorPasteNotFound, nil)
 			return
 		}
-		response := model.PasteResponse{
-			ID:        paste.ID,
-			Title:     paste.Title,
-			Language:  paste.Language,
-			CreatedAt: paste.CreatedAt.Format("2006-01-02 15:04:05"),
-			ExpiresAt: paste.ExpiresAt.Format("2006-01-02 15:04:05"),
-			Content:   paste.Content,
-		}
-
 		model.HandleResponse(c, http.StatusOK, model.Success, response)
 	}
 }
@@ -145,16 +124,7 @@ func CreatePasteHandler(svc service.PasteService) gin.HandlerFunc {
 			return
 		}
 
-		paste := model.Paste{
-			ID:                 idgen.GeneratePasteID(),
-			Title:              req.Title,
-			Language:           req.Language,
-			Content:            req.Content,
-			CreatedAt:          time.Now().UTC(),
-			AnonymousExpiresAt: time.Now().UTC().Add(req.Expire.Duration()),
-		}
-
-		err := svc.RegisterPaste(ctx, paste)
+		err := svc.RegisterPaste(ctx, req)
 		switch {
 		case errors.Is(err, model.ErrDuplicatePasteID):
 			model.HandleResponse(c, http.StatusInternalServerError, model.ErrorDatabase, nil)
